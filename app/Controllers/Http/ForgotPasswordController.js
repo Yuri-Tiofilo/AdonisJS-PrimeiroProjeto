@@ -1,3 +1,4 @@
+const moment = require("moment");
 const crypto = require("crypto");
 const User = use("App/Models/User");
 const Mail = use("Mail");
@@ -24,10 +25,10 @@ class ForgotPasswordController {
           token: user.token,
           link: `${request.input("redirect_url")}?token=${user.token}`
         },
-        mesagem => {
+        message => {
           message
-            .to(user.email) // usuário que foi editado acima
-            .from("yuri.silva@incca.com.br", "Yuri  |  INCCA Sistemas") // de quem o e-mail irá vim
+            .to(user.email)
+            .from("yuri@gmail.com")
             .subject("Recuperação de senha");
         }
       );
@@ -35,6 +36,31 @@ class ForgotPasswordController {
       return response.status(err.status).send({
         error: { message: "algo não deu certo. Este e-mail existe?" }
       });
+    }
+  }
+  async update({ request, response }) {
+    try {
+      const { token, password } = request.all();
+
+      const user = await User.findByOrFail("token", token);
+
+      const tokenExpired = moment()
+        .subtract("2", "days")
+        .isAfter(user.token_create_at);
+      if (tokenExpired) {
+        return response
+          .status(401)
+          .send({ error: { message: "token expirado" } });
+      }
+      user.token = null;
+      user.token_create_at = null;
+      user.password = password;
+
+      await user.save();
+    } catch (err) {
+      return response
+        .status(err.status)
+        .send({ error: { message: "Algo deu errado ao resetar sua senha" } });
     }
   }
 }
