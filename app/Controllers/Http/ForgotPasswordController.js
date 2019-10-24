@@ -8,6 +8,7 @@ class ForgotPasswordController {
     try {
       const email = request.input("email");
       const user = await User.findByOrFail("email", email);
+
       // findBy é utilizado para encontrar apenas um requistro,
       // utilizaremos do e-mail para encontrar este tipo de informação
       // OrFail é para caso ele não encontre retorne um erro caindo no cacth

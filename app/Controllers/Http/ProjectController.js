@@ -1,93 +1,52 @@
-'use strict'
+const Project = use("App/Models/Project");
 
-/** @typedef {import('@adonisjs/framework/src/Request')} Request */
-/** @typedef {import('@adonisjs/framework/src/Response')} Response */
-/** @typedef {import('@adonisjs/framework/src/View')} View */
-
-/**
- * Resourceful controller for interacting with projects
- */
 class ProjectController {
-  /**
-   * Show a list of all projects.
-   * GET projects
-   *
-   * @param {object} ctx
-   * @param {Request} ctx.request
-   * @param {Response} ctx.response
-   * @param {View} ctx.view
-   */
-  async index ({ request, response, view }) {
+  // Listagem de todos os projetos -> Index
+  async index({ request, response, view }) {
+    const projects = await Project.query() // iniciar uma query
+      .with("user") // carrega um relacionamento automatizamente preenchendo toda a informação do usuário
+      .fetch(); // finaliza a query
+
+    return projects;
   }
 
-  /**
-   * Render a form to be used for creating a new project.
-   * GET projects/create
-   *
-   * @param {object} ctx
-   * @param {Request} ctx.request
-   * @param {Response} ctx.response
-   * @param {View} ctx.view
-   */
-  async create ({ request, response, view }) {
+  // Criando de um projeto
+  async store({ request, response, auth }) {
+    // através do auth conseguimos pegar o id
+    const data = request.only(["title", "description"]); // buscamos os campos para criação do projeto, e colocamos ele dentro de uma const
+
+    const project = await Project.create({ ...data, user_id: auth.user.id }); // criamos um projeto por meio da const data com seus campos e colocamos dentro de uma outra const
+    // junto de data colocamos user_id: auth para conseguirmos assim pegar todas as informações do usuário e junto seu id
+    return project;
   }
 
-  /**
-   * Create/save a new project.
-   * POST projects
-   *
-   * @param {object} ctx
-   * @param {Request} ctx.request
-   * @param {Response} ctx.response
-   */
-  async store ({ request, response }) {
+  async show({ params }) {
+    const project = await Project.findOrFail(params.id);
+
+    await project.load("user"); // pega a informação de usuário igual o with do query
+    await project.load("tasks"); // pega a informação de tarefas igual o with do query
+
+    return project;
   }
 
-  /**
-   * Display a single project.
-   * GET projects/:id
-   *
-   * @param {object} ctx
-   * @param {Request} ctx.request
-   * @param {Response} ctx.response
-   * @param {View} ctx.view
-   */
-  async show ({ params, request, response, view }) {
+  // atualiza uma nova informação
+  async update({ params, request }) {
+    const project = await Project.findOrFail(params.id);
+    const data = request.only(["title", "description"]);
+
+    project.merge(data); // coloca os dados da requisição dentro do objeto buscado
+
+    await project.save(); // salva o novo estado do project
+
+    return project; // retorna o novo project
   }
 
-  /**
-   * Render a form to update an existing project.
-   * GET projects/:id/edit
-   *
-   * @param {object} ctx
-   * @param {Request} ctx.request
-   * @param {Response} ctx.response
-   * @param {View} ctx.view
-   */
-  async edit ({ params, request, response, view }) {
-  }
+  // deleta os projetos -> destroy
+  async destroy({ params }) {
+    const project = await Project.findOrFail(params.id);
 
-  /**
-   * Update project details.
-   * PUT or PATCH projects/:id
-   *
-   * @param {object} ctx
-   * @param {Request} ctx.request
-   * @param {Response} ctx.response
-   */
-  async update ({ params, request, response }) {
-  }
-
-  /**
-   * Delete a project with id.
-   * DELETE projects/:id
-   *
-   * @param {object} ctx
-   * @param {Request} ctx.request
-   * @param {Response} ctx.response
-   */
-  async destroy ({ params, request, response }) {
+    await project.delete(); // deleta a informação do banco de dados
   }
 }
 
-module.exports = ProjectController
+module.exports = ProjectController;

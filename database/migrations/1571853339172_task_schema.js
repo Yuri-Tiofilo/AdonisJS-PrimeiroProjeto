@@ -12,7 +12,7 @@ class TaskSchema extends Schema {
         .unsigned() // apenas valores positivos
         .notNullable()
         .references("id")
-        .inTable("users")
+        .inTable("projects")
         .onUpdate("CASCADE") // caso este campo sofra alteração na tabela de usuários é necessario que ele tambem faça as alterações nesta tabela
         .onDelete("CASCADE"); //caso delete o projeto será necessario tambem que delete as tarefas
       table
